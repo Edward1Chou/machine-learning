@@ -37,3 +37,69 @@ def classify0(inX, dataSet, labels, k):
                               key=operator.itemgetter(1), reverse=True)
     return sortedClassCount[0][0]
 
+def file2matrix(filename):
+    """
+    :param filename: 文件名的字符串
+    :return: 训练样本矩阵和类标签向量
+    """
+    fr = open(filename)
+    arrayLines = fr.readlines()
+    numberLines = len(arrayLines)
+    returnMat = zeros((numberLines, 3)) # 创建返回的NumPy矩阵
+    classLabelVector = []
+    index = 0
+    for line in arrayLines:
+        line = line.strip() # 去除开头和结尾处的空格
+        listFromLine = line.split('\t')
+        returnMat[index, :] = listFromLine[0:3] # 每行前3列
+        classLabelVector.append(int(listFromLine[-1]))
+        index += 1
+    return returnMat, classLabelVector
+
+def autonorm(dataSet):
+    """
+    归一化特征值
+    :param dataSet:
+    :return:
+    """
+    minVals = dataSet.min(0) # 参数0从列中选取最小值而不是行
+    maxVals = dataSet.max(0) # minVal maxVal都是1行3列
+    ranges = maxVals - minVals
+    # normDataSet = zeros(shape(dataSet))
+    m = dataSet.shape[0]
+    normDataSet = dataSet - tile(minVals, (m, 1))
+    normDataSet = normDataSet/tile(ranges, (m, 1)) # 特征值相除
+    return normDataSet, ranges, minVals
+
+def datingClassTest():
+    """
+    数据集10%作为测试集,90%作为训练集
+    :return:
+    """
+    hoRatio = 0.10
+    datingDataMat, datingLabels = file2matrix('datingTestSet2.txt')
+    normMat, ranges, minVals = autonorm(datingDataMat)
+    m = normMat.shape[0]
+    numTestVecs = int(m*hoRatio)
+    errorCount = 0 # 计数分错的个数
+    for i in range(numTestVecs):
+        classifierResult = classify0(normMat[i, :], normMat[numTestVecs:m, :],
+                                     datingLabels[numTestVecs:m], 3)
+        if (classifierResult != datingLabels[i]): errorCount += 1.0
+    print "the total error rate is %f" % (errorCount/float(numTestVecs))
+
+def classifyPerson():
+    """
+    输入一个人的参数,判断此人喜欢程度
+    :return:
+    """
+    resultList = ["一点也不喜欢", "略微喜欢", "非常喜欢"]
+    percentTats = float(raw_input("玩电子游戏时间比："))
+    ffMiles = float(raw_input("每年获得的飞行公里数："))
+    iceCream = float(raw_input("每年吃的冰淇淋数："))
+    datingDataMat, datingLabels = file2matrix('datingTestSet2.txt')
+    normMat, ranges, minVals = autonorm(datingDataMat)
+    inArr = array([ffMiles, percentTats, iceCream])
+    classifierResult = classify0((inArr-minVals)/ranges, normMat, datingLabels, 3)
+    print "你对这个人的喜欢程度为：", resultList[classifierResult - 1]
+
