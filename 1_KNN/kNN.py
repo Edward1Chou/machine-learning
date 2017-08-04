@@ -3,7 +3,11 @@
 
 from numpy import *
 import operator
+from os import listdir
 
+"""
+预测约会对象是否喜欢
+"""
 
 def createDataSet():
     group = array([[1.0, 1.1], [1.0, 1.0], [0, 0], [0, 0.1]])
@@ -102,4 +106,56 @@ def classifyPerson():
     inArr = array([ffMiles, percentTats, iceCream])
     classifierResult = classify0((inArr-minVals)/ranges, normMat, datingLabels, 3)
     print "你对这个人的喜欢程度为：", resultList[classifierResult - 1]
+
+
+"""
+手写数字识别
+"""
+
+
+def img2vector(filename):
+    """
+    读取32×32文件
+    :return: 1×1024的Numpy数组
+    """
+    returnVect = zeros((1, 1024))
+    fr = open(filename)
+    for i in range(32):
+        lineStr = fr.readline()
+        for j in range(32):
+            returnVect[0, 32*i+j] = int(lineStr[j])
+    return returnVect
+
+
+def handwritingClassTest():
+    """
+    测试代码
+    :return:
+    """
+    # 获取目录内容
+    hwLabels = []
+    trainingFileList = listdir('trainingDigits')
+    m = len(trainingFileList) # m个训练文件
+    trainingMat = zeros((m, 1024))
+    # 从文件名解析分类数字
+    for i in range(m):
+        filenameStr = trainingFileList[i]
+        fileStr = filenameStr.split('.')[0]
+        classNumStr = int(fileStr.split('_')[0]) # 分类数字
+        hwLabels.append(classNumStr)
+        trainingMat[i, :] = img2vector('trainingDigits/%s' % filenameStr)
+    # 测试集
+    testFileList = listdir('testDigits')
+    errorCount = 0.0
+    mTest = len(testFileList)
+    for i in range(mTest):
+        filenameStr = testFileList[i]
+        fileStr = filenameStr.split('.')[0]
+        classNumStr = int(fileStr.split('_')[0])
+        vectorUnderTest = img2vector('testDigits/%s' % filenameStr)
+        classifierResult = classify0(vectorUnderTest, trainingMat, hwLabels, 3)
+        if (classifierResult != classNumStr): errorCount += 1.0
+    print "the total number of errors is ", str(errorCount)
+    print "the total error rate is: %f" % (errorCount/float(mTest))
+
 
